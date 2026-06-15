@@ -1,0 +1,44 @@
+﻿@inherits LayoutComponentBase
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <span class="icon">⚙️</span>
+            <span>GisYweb Admin</span>
+        </div>
+
+        <nav class="admin-nav">
+            <div class="nav-section">GÉNÉRAL</div>
+            <NavLink href="/Admin" class="nav-item"><i class="bi bi-speedometer2 me-2"></i> Tableau de bord</NavLink>
+            <NavLink href="/Admin/GestionUtilisateurs" class="nav-item"><i class="bi bi-people me-2"></i> Utilisateurs</NavLink>
+            <NavLink href="/Admin/clients" class="nav-item"><i class="bi bi-diagram-3 me-2"></i> Clients / Systèmes</NavLink>
+            <NavLink href="/Admin/projects" class="nav-item"><i class="bi bi-folder2-open me-2"></i> Projets</NavLink>
+            <NavLink href="/Admin/profiles" class="nav-item"><i class="bi bi-sliders2 me-2"></i> Profils BD</NavLink>
+
+            <div class="nav-section mt-3">GESTION DES ACCÈS (PONTS)</div>
+            <NavLink href="/Admin/access/client" class="nav-item"><i class="bi bi-link-45deg me-2"></i> Accès Clients</NavLink>
+            <NavLink href="/Admin/access/system" class="nav-item"><i class="bi bi-hdd-network me-2"></i> Accès Systèmes</NavLink>
+            <NavLink href="/Admin/access/project" class="nav-item"><i class="bi bi-geo-alt me-2"></i> Accès Projets</NavLink>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            <a href="/" class="btn-return-site">← Retour au site public</a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-topbar">
+            <div class="topbar-title">Administration Système</div>
+            <div class="topbar-user">
+                <span class="user-status online"></span>
+                <span>Gilles Lavoie (Admin)</span>
+                <button class="btn-logout">Déconnexion</button>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            @Body
+        </div>
+    </main>
+</div>

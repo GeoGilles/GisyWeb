@@ -1,0 +1,291 @@
+@page "/Admin/clients"
+@layout AdminLayout
+@using GisyWeb.Infrastructure.AdminDb.Entities
+@using GisyWeb.Services
+@inject AdminUserService Svc
+
+<div class="container-fluid py-4" style="background-color:#f4f6f8; min-height:100vh;">
+
+    <!-- Titre de la page façon Dashboard -->
+    <div class="mb-4">
+        <h4 class="mb-0 fw-bold" style="color: #1a222c;"><i class="bi bi-diagram-3-fill me-2 text-warning"></i>GESTION DES CLIENTS / SYSTÈMES</h4>
+        <div class="text-muted small mt-1">Administration des locataires (tenants) et de leurs dossiers de configuration.</div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white py-3 d-flex justify-content-between align-items-center" style="background-color: #1a222c;">
+            <div class="fw-bold">Liste des Clients</div>
+            <button class="btn btn-sm fw-bold" style="background-color: #e6b422; color: #1a222c;" @onclick="NewClient">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau
+            </button>
+        </div>
+
+        <div class="card-body bg-white p-4">
+            @if (_loading)
+            {
+                <div class="text-center text-muted py-5">
+                    <div class="spinner-border text-warning mb-3" role="status"></div>
+                    <div>Chargement des clients...</div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <!-- COLONNE GAUCHE (Liste) -->
+                    <div class="col-12 col-xl-7">
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input class="form-control border-start-0" placeholder="Filtrer par code ou nom..." @bind="_filter" @bind:event="oninput" />
+                            <button class="btn btn-outline-secondary" @onclick="() => _filter = string.Empty">Effacer</button>
+                        </div>
+
+                        <div class="table-responsive border rounded" style="max-height: 65vh; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="sticky-top" style="background-color: #f9fafb;">
+                                    <tr>
+                                        <th class="text-muted small">CODE</th>
+                                        <th class="text-muted small">NOM</th>
+                                        <th class="text-center text-muted small">ACTIF</th>
+                                        <th class="text-center text-muted small">DÉFAUT</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var c in FilteredClients())
+                                    {
+                                        <tr class="@(_edit?.ClientCode == c.ClientCode ? "table-active" : "")">
+                                            <td class="fw-bold" style="color: #2d7a48;">@c.ClientCode</td>
+                                            <td class="fw-bold text-dark">@c.Name</td>
+
+                                            <!-- COLONNE ACTIF -->
+                                            <td class="text-center">
+                                                @if (c.IsActive)
+                                                {
+                                                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-circle text-muted opacity-25 fs-5"></i>
+                                                }
+                                            </td>
+
+                                            <!-- COLONNE DÉFAUT -->
+                                            <td class="text-center">
+                                                @if (c.IsDefault == 1)
+                                                {
+                                                    <i class="bi bi-star-fill text-warning fs-5"></i>
+                                                }
+                                            </td>
+
+                                            <!-- COLONNE EDIT -->
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-secondary py-1" @onclick="() => Edit(c)" title="Modifier">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE (Fiche) -->
+                    <div class="col-12 col-xl-5">
+                        <div class="card border border-warning shadow-sm sticky-top" style="top: 1.5rem; background-color: #fafaf7;">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: #1a222c;">Fiche Client</h5>
+
+                                @if (_edit == null)
+                                {
+                                    <div class="text-muted text-center py-5">
+                                        <i class="bi bi-cursor fs-1 opacity-25 d-block mb-3"></i>
+                                        Sélectionnez un client à gauche pour le modifier.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <EditForm Model="@_edit" OnValidSubmit="Save">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small fw-bold text-muted mb-1">CLIENT_CODE</label>
+                                                <input class="form-control font-monospace fw-bold" @bind="_edit.ClientCode" disabled="@_isExisting" required />
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small fw-bold text-muted mb-1">CONFIG_FOLDER</label>
+                                                <input class="form-control font-monospace" @bind="_edit.ConfigFolder" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">NOM</label>
+                                                <input class="form-control fw-bold" @bind="_edit.Name" required />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">DESCRIPTION</label>
+                                                <textarea class="form-control" rows="3" @bind="_edit.Description"></textarea>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">EMAIL</label>
+                                                <input class="form-control" type="email" @bind="_edit.Email" />
+                                            </div>
+
+                                            <div class="col-6 mt-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" @bind="_edit.IsActive" />
+                                                    <label class="form-check-label small fw-bold text-dark">Actif</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 mt-4">
+                                                <div class="form-check form-switch">
+                                                    <!-- IsDefault est int, on bind manuellement -->
+                                                    <input class="form-check-input" type="checkbox" role="switch"
+                                                           checked="@(_edit.IsDefault == 1)"
+                                                           @onchange="@(e => _edit.IsDefault = (bool)e.Value ? 1 : 0)" />
+                                                    <label class="form-check-label small fw-bold text-warning">Par défaut</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
+                                                <button type="submit" class="btn text-white flex-grow-1 fw-bold" style="background-color: #2d7a48;" disabled="@_saving">
+                                                    @if (_saving)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                                    }
+                                                    <i class="bi bi-save2 me-1"></i>ENREGISTRER
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary fw-bold" @onclick="Cancel" disabled="@_saving">Annuler</button>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(_msg))
+                                            {
+                                                <div class="col-12 mt-3 alert alert-info border-0 shadow-sm py-2 px-3 small fw-bold mb-0">
+                                                    <i class="bi bi-info-circle me-2"></i>@_msg
+                                                </div>
+                                            }
+                                        </div>
+                                    </EditForm>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // LE C# EST INTACT
+    private bool _loading = true;
+    private bool _saving = false;
+    private string _filter = "";
+    private string _msg = "";
+
+    private List<CartosClient> _clients = new();
+    private CartosClient? _edit;
+    private bool _isExisting = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _clients = await Svc.GetClientsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur Clients: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private IEnumerable<CartosClient> FilteredClients()
+    {
+        if (string.IsNullOrWhiteSpace(_filter)) return _clients;
+
+        var f = _filter.Trim().ToLowerInvariant();
+        return _clients.Where(c =>
+            (c.ClientCode ?? "").ToLowerInvariant().Contains(f) ||
+            (c.Name ?? "").ToLowerInvariant().Contains(f) ||
+            (c.Description ?? "").ToLowerInvariant().Contains(f)
+        );
+    }
+
+    private void Edit(CartosClient c)
+    {
+        _isExisting = true;
+        _edit = new CartosClient
+        {
+            ClientCode = c.ClientCode,
+            Name = c.Name,
+            Description = c.Description,
+            IsActive = c.IsActive,
+            IsDefault = c.IsDefault,
+            ConfigFolder = c.ConfigFolder,
+            SysRoleCode = c.SysRoleCode,
+            DtCode = c.DtCode,
+            DtName = c.DtName,
+            GlobalId = c.GlobalId,
+            Email = c.Email,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt
+        };
+        _msg = "";
+    }
+
+    private void NewClient()
+    {
+        _isExisting = false;
+        _edit = new CartosClient
+        {
+            ClientCode = "",
+            Name = "",
+            IsActive = true,
+            IsDefault = 0,
+            GlobalId = Guid.NewGuid().ToString().ToUpper(),
+            CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+        _msg = "";
+    }
+
+    private void Cancel()
+    {
+        _edit = null;
+        _msg = "";
+    }
+
+    private async Task Save()
+    {
+        if (_edit == null) return;
+
+        if (string.IsNullOrWhiteSpace(_edit.ClientCode) || string.IsNullOrWhiteSpace(_edit.Name))
+        {
+            _msg = "CLIENT_CODE et NOM sont requis.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            _edit.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            await Svc.UpsertClientAsync(_edit);
+            _clients = await Svc.GetClientsAsync();
+
+            _msg = "Enregistré.";
+        }
+        catch (Exception ex)
+        {
+            _msg = "Erreur : " + ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

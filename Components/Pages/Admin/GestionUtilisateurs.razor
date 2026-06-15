@@ -1,0 +1,458 @@
+﻿@page "/Admin/GestionUtilisateurs"
+@layout AdminLayout
+@using GisyWeb.Infrastructure.Services
+@using GisyWeb.Infrastructure.AdminDb.Entities
+@inject AdminService AdminSvc
+@inject NavigationManager Nav
+@inject GisyWeb.Infrastructure.Services.UiOrchestratorService UiOrchestrator
+@using GisyWeb.Services
+<div class="container-fluid py-4" style="background-color:#f4f6f8; min-height:100vh;">
+
+    <!-- ENTÊTE -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+            <h4 class="mb-0 fw-bold" style="color: #1a222c;"><i class="bi bi-people-fill me-2 text-warning"></i>UTILISATEURS & ACCÈS</h4>
+            <div class="text-muted small mt-1">Administration du parc Carto⁵ : Utilisateurs → Projets → Sites.</div>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="badge border text-dark bg-white px-3 py-2 shadow-sm">👥 <span class="fw-bold text-primary">@stats.Users</span> Utilisateurs</div>
+            <div class="badge border text-dark bg-white px-3 py-2 shadow-sm">📂 <span class="fw-bold text-success">@stats.Projets</span> Projets</div>
+            <div class="badge border text-dark bg-white px-3 py-2 shadow-sm">📍 <span class="fw-bold text-danger">@stats.Sites</span> Sites</div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- COLONNE 1 : LISTE UTILISATEURS -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark">Répertoire</h6>
+                    <button class="btn btn-sm text-white fw-bold" style="background-color: #2d7a48;" @onclick="CreerUtilisateur">
+                        <i class="bi bi-person-plus-fill me-1"></i>Nouveau
+                    </button>
+                </div>
+                <div class="card-body p-3">
+                    <!-- FILTRE TYPE -->
+                    <div class="btn-group btn-group-sm w-100 mb-3 shadow-sm">
+                        <button class="btn @(filterType == "USER" ? "text-white" : "btn-outline-secondary")"
+                                style="background-color: @(filterType == "USER" ? "#1a3c2a" : "transparent");"
+                                @onclick='() => filterType = "USER"'>
+                            👥 Humains
+                        </button>
+                        <button class="btn @(filterType == "SYSTEM" ? "text-white" : "btn-outline-secondary")"
+                                style="background-color: @(filterType == "SYSTEM" ? "#1a3c2a" : "transparent");"
+                                @onclick='() => filterType = "SYSTEM"'>
+                            ⚙️ Systèmes
+                        </button>
+                    </div>
+
+                    <div class="list-group list-group-flush border rounded" style="max-height: 70vh; overflow-y: auto;">
+                        @foreach (var u in (filterType == "USER" ? listeUtilisateurs : listeSystemes))
+                        {
+                            <button type="button" class="list-group-item list-group-item-action py-3 @(selectedUser?.ClientCode == u.ClientCode ? "active-brand" : "")"
+                                    @onclick="() => SelectionnerUtilisateur(u)">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h6 class="mb-1 fw-bold">@(string.IsNullOrEmpty(u.Name) ? u.ClientCode : u.Name)</h6>
+                                    <small class="badge bg-light text-dark border font-monospace">@u.ClientCode</small>
+                                </div>
+                                <div class="small opacity-75 text-truncate" style="font-size: 0.75rem;">
+                                    @u.Description
+                                </div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLONNE 2 : DÉTAILS & CONFIGURATION -->
+        <div class="col-12 col-lg-8">
+            @if (selectedUser != null)
+            {
+                <!-- FICHE PROFIL -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header text-white fw-bold py-3" style="background-color: #1a222c;">
+                        <i class="bi bi-person-badge me-2 text-warning"></i> Configuration du Profil : @selectedUser.Name
+                    </div>
+                    <div class="card-body bg-white p-4">
+                        <EditForm Model="@selectedUser" OnValidSubmit="SauvegarderUser">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">ID / CODE</label>
+                                    <input class="form-control font-monospace fw-bold bg-light" @bind="selectedUser.ClientCode" readonly="@(!isNewUser)" />
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold text-muted">NOM COMPLET</label>
+                                    <input class="form-control fw-bold" @bind="selectedUser.Name" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted">RÔLE SYSTÈME</label>
+                                    <select class="form-select" @bind="selectedUser.SysRoleCode">
+                                        <option value="USER">Utilisateur</option>
+                                        <option value="Admin">Administrateur</option>
+                                        <option value="GUEST">Invité</option>
+                                        <option value="SYSTEM">Système (Satellite)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mt-3">
+                                    <label class="form-label small fw-bold" style="color: #2d7a48;">DIRECTION TERRITORIALE (DT)</label>
+                                    <select class="form-select border-success-subtle" @onchange="OnDtChanged" value="@selectedUser.DtCode">
+                                        <option value="">-- Provinciale / Nationale --</option>
+                                        @foreach (var dt in listeDt)
+                                        {
+                                            <option value="@dt.Code">@dt.Nom</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mt-3">
+                                    <label class="form-label small fw-bold text-primary">
+                                        <i class="bi bi-database-fill-check me-1"></i> PROFIL DE DONNÉES (GPKG)
+                                    </label>
+                                    <select class="form-select @(string.IsNullOrEmpty(selectedProfilGuid) ? "border-danger" : "border-primary-subtle")"
+                                            @bind="selectedProfilGuid">
+                                        <option value="">-- Sélectionner le profil par défaut --</option>
+                                        @foreach (var p in listeProfils)
+                                        {
+                                            <option value="@p.GlobalId">@p.Label</option>
+                                        }
+                                    </select>
+                                    @if (string.IsNullOrEmpty(selectedProfilGuid) && !isNewUser)
+                                    {
+                                        <div class="text-danger mt-1" style="font-size:0.7rem fw-bold">⚠️ Création de projet impossible sans profil.</div>
+                                    }
+                                </div>
+
+                                <!-- ACCÈS ENVIRONNEMENTS -->
+                                <div class="col-md-12 mt-4">
+                                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-2">
+                                        <i class="bi bi-shield-lock-fill me-2 text-warning"></i> Ponts vers les Environnements
+                                    </h6>
+                                    <div class="table-responsive border rounded" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover mb-0 align-middle">
+                                            <thead class="bg-light small">
+                                                <tr>
+                                                    <th style="width: 50px;" class="text-center">Droit</th>
+                                                    <th style="width: 120px;">Code</th>
+                                                    <th>Nom de l'environnement</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var env in environnementsDispo)
+                                                {
+                                                    <tr>
+                                                        <td class="text-center">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   checked="@accesActuels.Contains(env.ClientCode)"
+                                                                   @onchange="@(e => ToggleAccess(env.ClientCode, e))" />
+                                                        </td>
+                                                        <td class="fw-bold">@env.ClientCode</td>
+                                                        <td class="small text-muted">@env.Name</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- MAGASIN D'OUTILS -->
+                                @if (selectedUser.SysRoleCode != "GUEST")
+                                {
+                                    <div class="col-md-12 mt-4">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                                            <i class="bi bi-grid-1x2-fill me-2 text-primary"></i> Magasin d'Outils autorisés
+                                        </h6>
+                                        @if (isLoadingFeatures)
+                                        {
+                                            <div class="text-muted small py-3"><span class="spinner-border spinner-border-sm me-2"></span>Chargement du catalogue...</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="table-responsive border rounded bg-white">
+                                                <table class="table table-sm table-hover mb-0 align-middle">
+                                                    <thead class="bg-light text-muted small">
+                                                        <tr>
+                                                            <th style="width: 50px;" class="text-center"><i class="bi bi-check-all"></i></th>
+                                                            <th style="width: 200px;">Composant</th>
+                                                            <th>Config JSON / Options</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var feat in availableFeatures)
+                                                        {
+                                                            var conf = userFeatureConfigs.FirstOrDefault(c => c.SettingKey == feat.Code);
+                                                            bool isEnabled = conf != null && conf.SettingValue != "0";
+                                                            string optionsValue = (conf != null && conf.SettingValue != "1" && conf.SettingValue != "0") ? conf.SettingValue : "";
+
+                                                            <tr>
+                                                                <td class="text-center">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                           checked="@isEnabled"
+                                                                           @onchange="@(e => ToggleFeature(feat.Code, e.Value))" />
+                                                                </td>
+                                                                <td>
+                                                                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">@feat.Label</div>
+                                                                    <div class="text-muted" style="font-size: 0.7rem;">@feat.Description</div>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="text" class="form-control form-control-sm font-monospace"
+                                                                           style="font-size: 0.75rem; background-color: #f8f9fa;"
+                                                                           value="@optionsValue"
+                                                                           placeholder="{ }"
+                                                                           @onchange="@(e => UpdateFeatureOption(feat.Code, e.Value))"
+                                                                           disabled="@(!isEnabled)" />
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                <div class="col-12 text-end border-top pt-3 mt-4">
+                                    <button type="submit" class="btn text-white px-5 fw-bold" style="background-color: #2d7a48;">
+                                        <i class="bi bi-save2 me-2"></i>Enregistrer les modifications
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+
+                <!-- HIÉRARCHIE PROJETS -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-folder2-open me-2 text-warning"></i> Projets Associés (@projetsUser.Count)</h5>
+                </div>
+
+                @if (projetsUser.Count == 0)
+                {
+                    <div class="alert alert-light border shadow-sm">Aucun projet trouvé pour cet utilisateur.</div>
+                }
+                else
+                {
+                    <div class="card shadow-sm border-0 overflow-hidden">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr class="small text-muted text-uppercase">
+                                    <th style="width: 40px;"></th>
+                                    <th style="width: 100px;">ID</th>
+                                    <th>Projet / Description</th>
+                                    <th style="width: 150px;">Création</th>
+                                    <th style="width: 100px;" class="text-end">Sites</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in projetsUser)
+                                {
+                                    var isOpen = expandedProjects.Contains(p.Objectid);
+                                    <tr @onclick="() => ToggleProjet(p.Objectid)" style="cursor:pointer;" class="@(isOpen ? "table-active border-start border-warning border-4" : "")">
+                                        <td class="text-center text-muted small"><i class="bi @(isOpen ? "bi-chevron-down" : "bi-chevron-right")"></i></td>
+                                        <td class="font-monospace fw-bold text-muted">@p.IdeProjt</td>
+                                        <td>
+                                            <div class="fw-bold" style="color: #2d7a48;">@p.NomProjt</div>
+                                            <div class="text-muted small text-truncate" style="max-width: 350px;">@p.DesProjt</div>
+                                        </td>
+                                        <td class="small text-muted">@p.DahCretn</td>
+                                        <td class="text-end">
+                                            <span class="badge rounded-pill bg-white border text-dark">
+                                                @(sitesCache.ContainsKey(p.Objectid) ? sitesCache[p.Objectid].Count : "?") Sites
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @if (isOpen)
+                                    {
+                                        <tr class="bg-light">
+                                            <td></td>
+                                            <td colspan="4" class="p-3">
+                                                @if (sitesCache.ContainsKey(p.Objectid) && sitesCache[p.Objectid].Any())
+                                                {
+                                                    <div class="list-group shadow-sm">
+                                                        @foreach (var s in sitesCache[p.Objectid])
+                                                        {
+                                                            <div class="list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center bg-white border-start border-info border-3">
+                                                                <span class="fw-bold text-dark"><span class="badge bg-info bg-opacity-10 text-info me-2">ID: @s.Objectid</span> @s.NomSite</span>
+                                                                <span class="small text-muted"><i class="bi bi-signpost-split me-1"></i>Carrefour: @(s.NumCarrf ?? "N/D")</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else if (sitesCache.ContainsKey(p.Objectid))
+                                                {
+                                                    <div class="text-muted fst-italic small ms-2"><i class="bi bi-info-circle me-1"></i> Aucun site localisé.</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="text-muted ms-2 small"><span class="spinner-border spinner-border-sm me-2"></span>Chargement des sites...</div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="d-flex align-items-center justify-content-center h-75 text-muted opacity-50">
+                    <div class="text-center">
+                        <i class="bi bi-arrow-left-circle" style="font-size: 4rem;"></i>
+                        <p class="mt-3 fw-bold">Sélectionnez un profil dans la liste de gauche</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Style spécifique pour cette page d'Administration lourde */
+    .active-brand {
+        background-color: #fafaf7 !important;
+        border-left: 4px solid #e6b422 !important;
+        color: #1a3c2a !important;
+    }
+
+        .active-brand h6 {
+            color: #2d7a48 !important;
+        }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #e6b422;
+        box-shadow: 0 0 0 0.25rem rgba(230, 180, 34, 0.1);
+    }
+</style>
+
+@code {
+    // TON CODE C# RESTE 100% IDENTIQUE ICI
+    // (J'ai juste gardé la structure pour que tu puisses copier-coller tout le bloc)
+    private List<CartosClient> listeUtilisateurs = new();
+    private CartosClient? selectedUser;
+    private List<CartosClient> listeSystemes = new();
+    private string filterType = "USER";
+    private List<AdminService.DtItem> listeDt = new();
+    private List<CartosClient> environnementsDispo = new();
+    private List<CartoProfil> listeProfils = new();
+    private bool isNewUser = false;
+    private List<string> accesActuels = new();
+    private string? selectedProfilGuid;
+    private AdminService.AdminStatsDto stats = new();
+    private List<CartoProjtPoint> projetsUser = new();
+    private HashSet<int> expandedProjects = new();
+    private Dictionary<int, List<CartoSitePoint>> sitesCache = new();
+    private List<FeatureRegistry> availableFeatures = new();
+    private List<CartoClientSetting> userFeatureConfigs = new();
+    private bool isLoadingFeatures = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        listeDt = await AdminSvc.GetListeDirectionsTerritorialesAsync();
+       // environnementsDispo = await AdminSvc.GetEnvironnementsDisponiblesAsync();
+        listeProfils = await AdminSvc.GetProfilsTechniquesAsync();
+        await ChargerDonneesPrincipales();
+    }
+
+    private async Task ChargerDonneesPrincipales()
+    {
+        listeUtilisateurs = await AdminSvc.GetUniquementUtilisateursAsync();
+        listeSystemes = await AdminSvc.GetUniquementSystemesAsync();
+       // stats = await AdminSvc.GetStatsAsync();
+    }
+
+    private async Task SelectionnerUtilisateur(CartosClient u)
+    {
+        selectedUser = u;
+        isNewUser = false;
+        expandedProjects.Clear();
+        sitesCache.Clear();
+
+        isLoadingFeatures = true;
+
+        // var taskProjets = (u.SysRoleCode != "SYSTEM") ? AdminSvc.GetProjetsParUtilisateurAsync(u.ClientCode) : Task.FromResult(new List<CartoProjtPoint>());
+        var taskAcces = AdminSvc.GetAccesUtilisateurAsync(u.ClientCode);
+        var taskProfil = AdminSvc.GetUserDefaultProfilGuidAsync(u.ClientCode);
+        var taskFeatures = UiOrchestrator.GetAllFeaturesAsync();
+        var taskUserConfigs = UiOrchestrator.GetAllConfigsForClientAsync(u.ClientCode);
+
+        await Task.WhenAll(taskAcces, taskProfil, taskFeatures, taskUserConfigs);
+
+        // projetsUser = await taskProjets;  ← COMMENTÉ
+        projetsUser = new List<CartoProjtPoint>();  // ← AJOUTEZ CETTE LIGNE (liste vide)
+        accesActuels = await taskAcces;
+        selectedProfilGuid = await taskProfil;
+        availableFeatures = await taskFeatures;
+        userFeatureConfigs = await taskUserConfigs;
+        isLoadingFeatures = false;
+    }
+
+    private void CreerUtilisateur()
+    {
+        selectedUser = new CartosClient { ClientCode = "", Name = "", IsDefault = 0, IsActive = true, SysRoleCode = "USER" };
+        isNewUser = true;
+        projetsUser.Clear();
+        expandedProjects.Clear();
+        sitesCache.Clear();
+        accesActuels.Clear();
+        selectedProfilGuid = null;
+    }
+
+    private async Task SauvegarderUser()
+    {
+        if (selectedUser == null) return;
+        var result = await AdminSvc.SauvegarderClientAvecAccesAsync(selectedUser, accesActuels, selectedProfilGuid);
+        if (result.Success)
+        {
+            await UiOrchestrator.SaveClientFeaturesAsync(selectedUser.ClientCode, userFeatureConfigs);
+            await ChargerDonneesPrincipales();
+            isNewUser = false;
+        }
+    }
+
+    private async Task ToggleProjet(int projetObjectId)
+    {
+        if (expandedProjects.Contains(projetObjectId)) expandedProjects.Remove(projetObjectId);
+        else
+        {
+            expandedProjects.Add(projetObjectId);
+            if (!sitesCache.ContainsKey(projetObjectId)) sitesCache[projetObjectId] = await AdminSvc.GetSitesParProjetAsync(projetObjectId);
+        }
+    }
+
+    private void OnDtChanged(ChangeEventArgs e)
+    {
+        if (selectedUser == null) return;
+        string code = e.Value?.ToString() ?? "";
+        selectedUser.DtCode = string.IsNullOrEmpty(code) ? null : code;
+        var dt = listeDt.FirstOrDefault(d => d.Code == code);
+        selectedUser.DtName = dt?.Nom ?? "";
+    }
+
+    private void ToggleAccess(string envCode, ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked)
+        {
+            if (isChecked && !accesActuels.Contains(envCode)) accesActuels.Add(envCode);
+            else if (!isChecked && accesActuels.Contains(envCode)) accesActuels.Remove(envCode);
+        }
+    }
+
+    private void ToggleFeature(string featureCode, object? value)
+    {
+        bool isEnabled = (bool)(value ?? false);
+        var conf = userFeatureConfigs.FirstOrDefault(c => c.SettingKey == featureCode);
+        if (conf != null && !isEnabled) userFeatureConfigs.Remove(conf);
+        else if (isEnabled) userFeatureConfigs.Add(new CartoClientSetting { ClientCode = selectedUser!.ClientCode, SettingKey = featureCode, SettingValue = "1", Scope = "UI_FEATURE", CodModOri = "GLO" });
+    }
+
+    private void UpdateFeatureOption(string featureCode, object? value)
+    {
+        string newValue = value?.ToString() ?? "";
+        var conf = userFeatureConfigs.FirstOrDefault(c => c.SettingKey == featureCode);
+        if (conf != null) conf.SettingValue = string.IsNullOrWhiteSpace(newValue) ? "1" : newValue;
+    }
+}

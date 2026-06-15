@@ -1,0 +1,250 @@
+@page "/Admin/access/client"
+@layout AdminLayout
+@using GisyWeb.Infrastructure.AdminDb.Entities
+@using GisyWeb.Services
+@inject AdminUserService Svc
+
+<!-- Ajout d'un conteneur avec un léger padding comme le Dashboard -->
+<div class="container-fluid py-4" style="background-color:#f4f6f8; min-height:100vh;">
+
+    <!-- Titre de la page façon Dashboard -->
+    <div class="mb-4">
+        <h4 class="mb-0 fw-bold" style="color: #1a222c;"><i class="bi bi-link-45deg me-2 text-warning"></i>GESTION DES ACCÈS CLIENTS</h4>
+        <div class="text-muted small mt-1">Liaison (Bridge) entre les codes clients source et cible.</div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white py-3 d-flex justify-content-between align-items-center" style="background-color: #1a222c;">
+            <div class="fw-bold">Liste des Liaisons</div>
+            <button class="btn btn-sm fw-bold" style="background-color: #e6b422; color: #1a222c;" @onclick="New">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau Pont
+            </button>
+        </div>
+
+        <div class="card-body bg-white p-4">
+            @if (_loading)
+            {
+                <div class="text-center text-muted py-5">
+                    <div class="spinner-border text-warning mb-3" role="status"></div>
+                    <div>Chargement des accès...</div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <!-- COLONNE GAUCHE (Liste) -->
+                    <div class="col-12 col-xl-7">
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input class="form-control border-start-0" placeholder="Rechercher un code client..." @bind="_filter" @bind:event="oninput" />
+                            <button class="btn btn-outline-secondary" @onclick="() => _filter = string.Empty">Effacer</button>
+                        </div>
+
+                        <div class="table-responsive border rounded" style="max-height: 65vh; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="sticky-top" style="background-color: #f9fafb;">
+                                    <tr>
+                                        <th class="text-muted small">USER_CLIENT_CODE (Source)</th>
+                                        <th class="text-muted small">APP_CLIENT_CODE (Cible)</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var a in Filtered())
+                                    {
+                                        <tr class="@(_edit?.AccessId == a.AccessId ? "table-active" : "")">
+                                            <td class="fw-bold" style="color: #2d7a48;">@a.UserClientCode</td>
+                                            <td class="font-monospace fw-bold text-dark">@a.AppClientCode</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-secondary py-1" @onclick="() => Edit(a)" title="Modifier">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE (Formulaire d'édition) -->
+                    <div class="col-12 col-xl-5">
+                        <div class="card border border-warning shadow-sm sticky-top" style="top: 1.5rem; background-color: #fafaf7;">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: #1a222c;">Fiche Accès Client</h5>
+
+                                @if (_edit == null)
+                                {
+                                    <div class="text-muted text-center py-5">
+                                        <i class="bi bi-cursor fs-1 opacity-25 d-block mb-3"></i>
+                                        Sélectionnez une entrée à gauche pour la modifier, ou cliquez sur "Nouveau Pont".
+                                    </div>
+                                }
+                                else
+                                {
+                                    <EditForm Model="@_edit" OnValidSubmit="Save">
+                                        <div class="row g-3">
+
+                                            <!-- SELECTEUR SOURCE -->
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">CLIENT SOURCE (USER)</label>
+                                                <select class="form-select fw-bold" @bind="_edit.UserClientCode" required>
+                                                    <option value="">-- Choisir le client source --</option>
+                                                    @foreach (var c in _clientsList)
+                                                    {
+                                                        <option value="@c.ClientCode">@c.ClientCode - @c.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <!-- SELECTEUR CIBLE -->
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1 mt-2">CLIENT CIBLE (APP)</label>
+                                                <select class="form-select font-monospace" @bind="_edit.AppClientCode" required>
+                                                    <option value="">-- Choisir l'application cible --</option>
+                                                    @foreach (var c in _clientsList)
+                                                    {
+                                                        <option value="@c.ClientCode">@c.ClientCode - @c.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
+                                                <button type="submit" class="btn text-white flex-grow-1 fw-bold" style="background-color: #2d7a48;" disabled="@_saving">
+                                                    @if (_saving)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                                    }
+                                                    <i class="bi bi-save2 me-1"></i>ENREGISTRER
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary fw-bold" @onclick="Cancel" disabled="@_saving">Annuler</button>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(_msg))
+                                            {
+                                                <div class="col-12 mt-3 alert alert-info border-0 shadow-sm py-2 px-3 small fw-bold mb-0">
+                                                    <i class="bi bi-info-circle me-2"></i>@_msg
+                                                </div>
+                                            }
+                                        </div>
+                                    </EditForm>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // TON CODE C# RESTE EXACTEMENT LE MÊME ICI
+    private bool _loading = true;
+    private bool _saving = false;
+    private string _filter = "";
+    private string _msg = "";
+
+    private List<CartoUserClientAccess> _items = new();
+    private List<CartosClient> _clientsList = new();
+    private CartoUserClientAccess? _edit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var t1 = Svc.GetUserClientAccessAsync();
+            var t2 = Svc.GetClientsAsync();
+
+            await Task.WhenAll(t1, t2);
+            _items = await t1;
+            _clientsList = await t2;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private IEnumerable<CartoUserClientAccess> Filtered()
+    {
+        if (string.IsNullOrWhiteSpace(_filter)) return _items;
+
+        var f = _filter.Trim().ToLowerInvariant();
+        return _items.Where(a =>
+            (a.UserClientCode ?? "").ToLowerInvariant().Contains(f) ||
+            (a.AppClientCode ?? "").ToLowerInvariant().Contains(f)
+        );
+    }
+
+    private void Edit(CartoUserClientAccess a)
+    {
+        _edit = new CartoUserClientAccess
+        {
+            AccessId = a.AccessId,
+            UserClientCode = a.UserClientCode,
+            AppClientCode = a.AppClientCode
+        };
+        _msg = "";
+    }
+
+    private void New()
+    {
+        _edit = new CartoUserClientAccess
+        {
+            UserClientCode = "",
+            AppClientCode = ""
+        };
+        _msg = "";
+    }
+
+    private void Cancel()
+    {
+        _edit = null;
+        _msg = "";
+    }
+
+    private async Task Save()
+    {
+        if (_edit == null) return;
+
+        if (string.IsNullOrWhiteSpace(_edit.UserClientCode) || string.IsNullOrWhiteSpace(_edit.AppClientCode))
+        {
+            _msg = "Les deux codes clients sont requis.";
+            return;
+        }
+
+        if (_edit.UserClientCode == _edit.AppClientCode)
+        {
+            _msg = "Vous ne pouvez pas lier un client à lui-même.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await Svc.UpsertUserClientAccessAsync(_edit);
+            _items = await Svc.GetUserClientAccessAsync();
+            _msg = "Enregistrement réussi.";
+            _edit = null;
+        }
+        catch (Exception ex)
+        {
+            _msg = "Erreur : " + ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

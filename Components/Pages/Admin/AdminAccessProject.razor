@@ -1,0 +1,279 @@
+@page "/Admin/access/project"
+@layout AdminLayout
+@using GisyWeb.Infrastructure.AdminDb.Entities
+@using GisyWeb.Services
+@inject AdminUserService Svc
+
+<div class="container-fluid py-4" style="background-color:#f4f6f8; min-height:100vh;">
+
+    <!-- Titre de la page façon Dashboard -->
+    <div class="mb-4">
+        <h4 class="mb-0 fw-bold" style="color: #1a222c;"><i class="bi bi-shield-lock-fill me-2 text-warning"></i>GESTION DES DROITS PROJETS</h4>
+        <div class="text-muted small mt-1">Définition des accès et rôles des utilisateurs par projet.</div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white py-3 d-flex justify-content-between align-items-center" style="background-color: #1a222c;">
+            <div class="fw-bold">Liste des Permissions</div>
+            <button class="btn btn-sm fw-bold" style="background-color: #e6b422; color: #1a222c;" @onclick="New">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau
+            </button>
+        </div>
+
+        <div class="card-body bg-white p-4">
+            @if (_loading)
+            {
+                <div class="text-center text-muted py-5">
+                    <div class="spinner-border text-warning mb-3" role="status"></div>
+                    <div>Chargement des accès...</div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <!-- COLONNE GAUCHE (Liste) -->
+                    <div class="col-12 col-xxl-8">
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input class="form-control border-start-0" placeholder="Rechercher par code utilisateur..." @bind="_filter" @bind:event="oninput" />
+                            <button class="btn btn-outline-secondary" @onclick="() => _filter = string.Empty">Effacer</button>
+                        </div>
+
+                        <div class="table-responsive border rounded" style="max-height: 65vh; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="sticky-top" style="background-color: #f9fafb;">
+                                    <tr>
+                                        <th class="text-muted small">UTILISATEUR</th>
+                                        <th class="text-muted small">PROJET</th>
+                                        <th class="text-muted small">RÔLE</th>
+                                        <th class="text-center text-muted small">ÉCRITURE</th>
+                                        <th class="text-center text-muted small">PROPRIÉTAIRE</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var a in Filtered())
+                                    {
+                                        <tr class="@(_edit?.IdeAccesProjt == a.IdeAccesProjt ? "table-active" : "")">
+                                            <td>
+                                                <div class="fw-bold" style="color: #2d7a48;">@a.CodUtils</div>
+                                                <div class="small text-muted">@(a.User?.FullName ?? "-")</div>
+                                            </td>
+                                            <td class="font-monospace fw-bold text-dark">@a.IdeProjt</td>
+                                            <td><span class="badge border text-dark" style="background-color: #fafaf7;">@a.RoleCode</span></td>
+                                            <td class="text-center">
+                                                @if (a.IndEcrit == 1)
+                                                {
+                                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (a.IndPropr == 1)
+                                                {
+                                                    <i class="bi bi-star-fill text-warning"></i>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-secondary py-1" @onclick="() => Edit(a)" title="Modifier">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE (Formulaire) -->
+                    <div class="col-12 col-xxl-4">
+                        <div class="card border border-warning shadow-sm sticky-top" style="top: 1.5rem; background-color: #fafaf7;">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: #1a222c;">Permission Projet</h5>
+
+                                @if (_edit == null)
+                                {
+                                    <div class="text-muted text-center py-5">
+                                        <i class="bi bi-cursor fs-1 opacity-25 d-block mb-3"></i>
+                                        Sélectionnez une ligne à gauche pour la modifier.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <EditForm Model="@_edit" OnValidSubmit="Save">
+                                        <div class="row g-3">
+
+                                            <!-- USER -->
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">UTILISATEUR</label>
+                                                <select class="form-select fw-bold" @bind="_edit.CodUtils" required>
+                                                    <option value="">-- Choisir l'utilisateur --</option>
+                                                    @foreach (var u in _usersList)
+                                                    {
+                                                        <option value="@u.UserCode">@u.UserCode - @u.FullName</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <!-- PROJECT -->
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1 mt-2">PROJET</label>
+                                                <select class="form-select font-monospace" @bind="_edit.IdeProjt" required>
+                                                    <option value="0">-- Choisir le projet --</option>
+                                                    @foreach (var p in _projetsList)
+                                                    {
+                                                        <option value="@(p.IdeProjt ?? 0)">ID @p.IdeProjt : @p.NomProjt</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <!-- ROLE -->
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1 mt-2">RÔLE</label>
+                                                <select class="form-select" @bind="_edit.RoleCode">
+                                                    <option value="VIEWER">VIEWER</option>
+                                                    <option value="EDITOR">EDITOR</option>
+                                                    <option value="MANAGER">MANAGER</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- SWITCHES -->
+                                            <div class="col-6 mt-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch"
+                                                           checked="@(_edit.IndEcrit == 1)"
+                                                           @onchange="@(e => _edit.IndEcrit = (bool)e.Value ? 1 : 0)">
+                                                    <label class="form-check-label small fw-bold text-dark">Droit d'Écriture</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 mt-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch"
+                                                           checked="@(_edit.IndPropr == 1)"
+                                                           @onchange="@(e => _edit.IndPropr = (bool)e.Value ? 1 : 0)">
+                                                    <label class="form-check-label small fw-bold text-dark">Propriétaire</label>
+                                                </div>
+                                            </div>
+
+                                            <!-- DATES -->
+                                            <div class="col-6 mt-4 border-top pt-3">
+                                                <label class="form-label small fw-bold text-muted mb-1">Début (YYYY-MM-DD)</label>
+                                                <input type="text" class="form-control" @bind="_edit.DatDebutApplq" placeholder="2024-01-01" />
+                                            </div>
+                                            <div class="col-6 mt-4 border-top pt-3">
+                                                <label class="form-label small fw-bold text-muted mb-1">Fin (Opt)</label>
+                                                <input type="text" class="form-control" @bind="_edit.DatFinApplq" placeholder="Optionnel" />
+                                            </div>
+
+                                            <!-- BUTTONS -->
+                                            <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
+                                                <button type="submit" class="btn text-white flex-grow-1 fw-bold" style="background-color: #2d7a48;" disabled="@_saving">
+                                                    @if (_saving)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                                    }
+                                                    <i class="bi bi-save2 me-1"></i>ENREGISTRER
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary fw-bold" @onclick="Cancel" disabled="@_saving">Annuler</button>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(_msg))
+                                            {
+                                                <div class="col-12 mt-3 alert alert-info border-0 shadow-sm py-2 px-3 small fw-bold mb-0">
+                                                    <i class="bi bi-info-circle me-2"></i>@_msg
+                                                </div>
+                                            }
+                                        </div>
+                                    </EditForm>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // LE C# EST INTACT
+    private bool _loading = true;
+    private bool _saving = false;
+    private string _filter = "";
+    private string _msg = "";
+
+    private List<CartoAccesProjt> _items = new();
+    private List<CartoUser> _usersList = new();
+    private List<CartoProjtPoint> _projetsList = new();
+    private CartoAccesProjt? _edit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            var t1 = Svc.GetAllAccessAsync();
+            var t2 = Svc.GetAllUsersAsync();
+            // var t3 = Svc.GetAllProjectsAsync();  ← COMMENTÉ
+
+            await Task.WhenAll(t1, t2);  // ← Enlevez t3
+            _items = await t1;
+            _usersList = await t2;
+            _projetsList = new List<CartoProjtPoint>();  // ← Liste vide
+                                                         // _projetsList = await t3;  ← COMMENTÉ
+        }
+        finally { _loading = false; }
+    }
+
+    private IEnumerable<CartoAccesProjt> Filtered()
+    {
+        if (string.IsNullOrWhiteSpace(_filter)) return _items;
+        var f = _filter.Trim().ToLowerInvariant();
+        return _items.Where(a => (a.CodUtils ?? "").ToLowerInvariant().Contains(f));
+    }
+
+    private void Edit(CartoAccesProjt a)
+    {
+        _edit = new CartoAccesProjt
+        {
+            IdeAccesProjt = a.IdeAccesProjt,
+            IdeProjt = a.IdeProjt,
+            CodUtils = a.CodUtils,
+            RoleCode = a.RoleCode,
+            IndEcrit = a.IndEcrit,
+            IndPropr = a.IndPropr,
+            DatDebutApplq = a.DatDebutApplq,
+            DatFinApplq = a.DatFinApplq
+        };
+        _msg = "";
+    }
+
+    private void New()
+    {
+        _edit = new CartoAccesProjt
+        {
+            IdeProjt = 0,
+            CodUtils = "",
+            RoleCode = "VIEWER",
+            DatDebutApplq = DateTime.Now.ToString("yyyy-MM-dd")
+        };
+        _msg = "";
+    }
+
+    private void Cancel() { _edit = null; _msg = ""; }
+
+    private async Task Save()
+    {
+        if (_edit == null) return;
+        _saving = true;
+        try
+        {
+            await Svc.SaveAccessAsync(_edit);
+            _items = await Svc.GetAllAccessAsync();
+            _msg = "Enregistré.";
+            _edit = null;
+        }
+        catch (Exception ex) { _msg = "Erreur: " + ex.Message; }
+        finally { _saving = false; }
+    }
+}

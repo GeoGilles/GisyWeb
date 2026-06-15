@@ -1,0 +1,181 @@
+/* =========================================================
+   GABARIT PRINCIPAL - GISYWEB (Desktop & Mobile)
+   ========================================================= */
+
+.gisweb-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ---- HEADER / NAVBAR ---- */
+.gw-navbar {
+    background: linear-gradient(135deg, #1a3c2a, #2d7a48);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 2000; /* Toujours au dessus de la carte */
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    border-bottom: 3px solid #e6b422;
+}
+
+.gw-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 64px;
+    position: relative;
+}
+
+.gw-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.gw-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #e6b422;
+    letter-spacing: 0.02em;
+}
+
+/* ---- LIENS DE NAVIGATION (Desktop) ---- */
+.gw-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+    .gw-nav-links a {
+        color: rgba(255, 255, 255, 0.9) !important; /* Force le blanc cassé, tue le bleu ! */
+        text-decoration: none !important; /* Enlève le souligné */
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 6px 0;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+        /* Lien Actif (Géré par Blazor) */
+        .gw-nav-links a.active {
+            color: #ffffff !important;
+            border-bottom-color: #e6b422 !important;
+        }
+
+        .gw-nav-links a:hover:not(.btn-nav-map) {
+            color: #e6b422 !important; /* Devient Or au survol */
+        }
+
+        /* Bouton Spécial "Ouvrir la carte" */
+        .gw-nav-links a.btn-nav-map {
+            background: #e6b422 !important; /* Fond Or */
+            color: #1a3c2a !important; /* Texte Vert foncé */
+            padding: 8px 16px !important;
+            border-radius: 6px;
+            border: none;
+            font-weight: 700;
+        }
+
+            .gw-nav-links a.btn-nav-map:hover {
+                background: #f0c040 !important;
+                transform: translateY(-1px);
+            }
+
+/* ---- BOUTON HAMBURGER (Caché sur PC) ---- */
+.gw-navbar-toggler {
+    display: none;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 1.5rem;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* ---- CONTENU & FOOTER ---- */
+.gw-main {
+    flex: 1;
+}
+
+.gw-footer {
+    background: #1a3c2a;
+    color: rgba(255,255,255,0.8);
+    padding: 40px 24px 20px;
+}
+
+.gw-footer-content {
+    display: flex;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.gw-footer-col {
+    flex: 1;
+    min-width: 200px;
+}
+
+    .gw-footer-col h4 {
+        color: #e6b422;
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+        font-weight: 700;
+    }
+
+    .gw-footer-col a {
+        display: block;
+        color: rgba(255,255,255,0.6);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+        .gw-footer-col a:hover {
+            color: #e6b422;
+        }
+
+/* =========================================================
+   RESPONSIVE (Menu Mobile)
+   ========================================================= */
+@media (max-width: 768px) {
+    .gw-navbar-toggler {
+        display: block; /* Affiche le bouton hamburger */
+    }
+
+    .gw-nav-links {
+        position: absolute;
+        top: 64px; /* Sous la barre */
+        left: -24px;
+        right: -24px;
+        background: #1a3c2a;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px 40px;
+        gap: 16px;
+        box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+        border-bottom: 3px solid #e6b422;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out, padding 0.3s;
+        max-height: 500px; /* Ouvert par défaut */
+    }
+
+        /* Géré par la variable C# 'collapseNavMenu' */
+        .gw-nav-links.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .gw-nav-links a.btn-nav-map {
+            text-align: center;
+            margin-top: 10px;
+        }
+}

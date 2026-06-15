@@ -1,0 +1,140 @@
+﻿@inherits LayoutComponentBase
+
+<div class="gisweb-layout">
+
+    <!-- NAVBAR -->
+    <header class="gw-navbar">
+        <div class="gw-nav-container">
+            <!-- Logo -->
+            <a href="/" class="gw-logo">
+                <img src="images/carto5-logo.png" alt="GisYweb" style="height: 40px;" />
+                <span class="gw-brand">GisYweb</span>
+            </a>
+
+            <!-- Bouton Hamburger (Mobile) -->
+            <button class="gw-navbar-toggler" @onclick="ToggleNavMenu">☰</button>
+
+            <!-- Liens de navigation -->
+            <nav class="gw-nav-links @(collapseNavMenu ? "collapsed" : "")" @onclick="CloseNavMenu">
+                <NavLink href="/" Match="NavLinkMatch.All">Accueil</NavLink>
+                <NavLink href="/services">Expertise</NavLink>
+
+                <!-- MENU DÉROULANT ACADÉMIE -->
+                <div class="gw-dropdown" @onclick:stopPropagation="true">
+                    <button class="gw-dropbtn">Académie ▼</button>
+                    <div class="gw-dropdown-content">
+                        <NavLink href="/formations">📚 Formations</NavLink>
+                        <NavLink href="/metiers">💼 Métiers de la Géomatique</NavLink>
+                        <NavLink href="/liste-metiers">💼 Liste des Métiers</NavLink>
+                    </div>
+                </div>
+
+                <NavLink href="/carto5">Plateforme Carto⁵</NavLink>
+                <NavLink href="/carte-3d">🌐 Portail 3D</NavLink>
+                <NavLink href="/contact">Contact</NavLink>
+                <NavLink href="/carte" class="btn-nav-map">🗺️ Ouvrir la carte</NavLink>
+
+                
+                <!-- 🔒 CADENAS Admin -->
+                <a class="btn-lock" @onclick="UnlockAdmin" title="Administration" style="cursor:pointer;">
+                    @(isAuthenticated ? "🔓" : "🔒")
+                </a>
+                @if (isAuthenticated)
+                {
+                    <NavLink href="/Admin/home" class="btn-nav-Admin">⚙️ Admin</NavLink>
+                }
+            </nav>
+        </div>
+    </header>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="gw-main">
+        @Body
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="gw-footer">
+        <div class="gw-footer-content">
+            <div class="gw-footer-col">
+                <img src="images/carto5-logo.png" alt="GisYweb" style="height: 40px;" />
+                <p>Solutions géospatiales avancées & Développement sur mesure.</p>
+            </div>
+            <div class="gw-footer-col">
+                <h4>Navigation</h4>
+                <a href="/">Accueil</a>
+                <a href="/carto5">Plateforme Carto⁵</a>
+                <a href="/carte">Carte interactive</a>
+            </div>
+            <div class="gw-footer-col">
+                <h4>Contact</h4>
+                <a href="https://www.gisyweb.com">www.gisyweb.com</a>
+                <a href="/contact">Nous joindre</a>
+                <p>© @DateTime.Now.Year Gilles Lavoie</p>
+            </div>
+        </div>
+    </footer>
+
+</div>
+
+<!-- 🔐 POPUP DE LOGIN -->
+@if (showLoginModal)
+{
+    <div class="login-overlay" @onclick="CloseLogin">
+        <div class="login-modal" @onclick:stopPropagation="true">
+            <div class="login-modal-header">
+                <h3>🔐 Administration</h3>
+                <button class="login-modal-close" @onclick="CloseLogin">✕</button>
+            </div>
+            <div class="login-modal-body">
+                <div class="login-icon">🛡️</div>
+                <p class="login-text">Accès restreint au personnel autorisé.</p>
+                <div class="login-input-group">
+                    <label>Mot de passe</label>
+                    <input type="@(showPassword ? "text" : "password")"
+                           @bind="passwordInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleKeyDown"
+                           placeholder="••••••••"
+                           autofocus />
+                    <button class="btn-toggle-password" @onclick="TogglePasswordVisibility" type="button">@(showPassword ? "🙈" : "👁️")</button>
+                </div>
+                @if (!string.IsNullOrEmpty(loginError))
+                {
+                    <div class="login-error">@loginError</div>
+                }
+                <button class="btn-login-submit" @onclick="TryLogin" disabled="@isLoggingIn">@(isLoggingIn ? "Vérification..." : "🔓 Déverrouiller")</button>
+                <p class="login-hint">Contactez l'Administrateur système pour obtenir l'accès.</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool collapseNavMenu = true;
+    private bool showLoginModal = false;
+    private bool isAuthenticated = false;
+    private bool isLoggingIn = false;
+    private bool showPassword = false;
+    private string passwordInput = "";
+    private string loginError = "";
+
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+    private void CloseNavMenu() => collapseNavMenu = true;
+    private void UnlockAdmin() { showLoginModal = true; StateHasChanged(); }
+    private void CloseLogin() { showLoginModal = false; StateHasChanged(); }
+    private void TogglePasswordVisibility() => showPassword = !showPassword;
+
+    private async void HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await TryLogin(); }
+
+    private async Task TryLogin()
+    {
+        loginError = ""; isLoggingIn = true; StateHasChanged();
+        await Task.Delay(600);
+        if (passwordInput == "11" || passwordInput == "Admin")
+        {
+            isAuthenticated = true; showLoginModal = false; passwordInput = "";
+        }
+        else { loginError = "⛔ Mot de passe incorrect."; passwordInput = ""; }
+        isLoggingIn = false; StateHasChanged();
+    }
+}

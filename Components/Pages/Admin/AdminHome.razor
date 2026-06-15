@@ -1,0 +1,161 @@
+@page "/Admin"
+@page "/Admin/home"
+@layout AdminLayout
+@using GisyWeb.Services
+@inject AdminUserService Svc
+
+<!-- CONTENEUR GLOBAL (Gris bleuté pour faire ressortir les cartes blanches) -->
+<div class="container-fluid py-4" style="background-color:#f5f7fa; min-height:100vh;">
+
+    <!-- ENTÊTE (Style identique à GestionUtilisateurs) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom bg-white p-4 shadow-sm rounded">
+        <div>
+            <h4 class="text-primary mb-0 fw-bold"><i class="bi bi-speedometer2 me-2"></i>TABLEAU DE BORD</h4>
+            <div class="text-muted small mt-1">Bienvenue dans l'Administration Carto⁵</div>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-light text-dark border px-3 py-2">
+                <i class="bi bi-calendar-event me-2"></i>@DateTime.Now.ToString("dd MMMM yyyy")
+            </span>
+        </div>
+    </div>
+
+    <!-- GRILLE DES CARTES -->
+    <div class="row g-4">
+
+        <!-- 1. UTILISATEURS (Lien corrigé vers /utilisateurs) -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 animate-fade-in">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded p-3 me-3">
+                            <i class="bi bi-people-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small text-uppercase fw-bold">Utilisateurs</h6>
+                            <h2 class="mb-0 fw-bold text-dark">@_userCount</h2>
+                        </div>
+                    </div>
+                    <a href="/Admin/utilisateurs" class="btn btn-sm btn-outline-primary w-100 fw-bold">
+                        Gérer les Accès <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PROFILS TECHNIQUES (Ajouté car c'est important) -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 animate-fade-in">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded p-3 me-3">
+                            <i class="bi bi-sliders2-vertical fs-3"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small text-uppercase fw-bold">Profils BD</h6>
+                            <h2 class="mb-0 fw-bold text-dark">@_profilCount</h2>
+                        </div>
+                    </div>
+                    <a href="/Admin/profiles" class="btn btn-sm btn-outline-warning text-dark w-100 fw-bold">
+                        Configurer <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CLIENTS / SYSTÈMES -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 animate-fade-in">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success bg-opacity-10 text-success rounded p-3 me-3">
+                            <i class="bi bi-diagram-3-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small text-uppercase fw-bold">Systèmes</h6>
+                            <h2 class="mb-0 fw-bold text-dark">@_clientCount</h2>
+                        </div>
+                    </div>
+                    <a href="/Admin/clients" class="btn btn-sm btn-outline-success w-100 fw-bold">
+                        Voir les Clients <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. PROJETS -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 animate-fade-in">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger bg-opacity-10 text-danger rounded p-3 me-3">
+                            <i class="bi bi-folder2-open fs-3"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small text-uppercase fw-bold">Projets</h6>
+                            <h2 class="mb-0 fw-bold text-dark">@_projectCount</h2>
+                        </div>
+                    </div>
+                    <a href="/Admin/projects" class="btn btn-sm btn-outline-danger w-100 fw-bold">
+                        Explorer <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÉTAT DU SYSTÈME (Bas de page) -->
+        <div class="col-12 mt-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold small text-uppercase border-bottom py-3">
+                    <i class="bi bi-activity me-2 text-info"></i>État du Système
+                </div>
+                <div class="card-body bg-white">
+                    <div class="row font-monospace small">
+                        <div class="col-md-4 mb-2">
+                            <span class="text-muted d-block">Base de données Admin</span>
+                            <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Connecté (SQLite)</span>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <span class="text-muted d-block">Service Utilisateur</span>
+                            <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Actif</span>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <span class="text-muted d-block">Dernière synchro</span>
+                            <span class="text-dark">@DateTime.Now.ToString("F")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _userCount = 0;
+    private int _clientCount = 0;
+    private int _projectCount = 0;
+    private int _profilCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Chargement parallèle pour la performance (Ferrari mode)
+            var t1 = Svc.GetAllUsersAsync();
+            var t2 = Svc.GetClientsAsync();
+            var t3 = Svc.GetAllProjectsAsync();
+            var t4 = Svc.GetProfilsAsync();
+
+            await Task.WhenAll(t1, t2, t3, t4);
+
+            _userCount = (await t1).Count;
+            _clientCount = (await t2).Count;
+            _projectCount = (await t3).Count;
+            _profilCount = (await t4).Count;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur Dashboard: {ex.Message}");
+        }
+    }
+}

@@ -1,0 +1,81 @@
+﻿@page "/contact"
+
+<PageTitle>Contactez-nous - GisYweb</PageTitle>
+
+<div class="contact-page">
+
+    <!-- HERO -->
+    <header class="contact-hero">
+        <h1>Contactez <span>GisYweb</span></h1>
+        <p>Prêt à propulser vos projets géospatiaux au niveau supérieur ? Écrivez-nous.</p>
+    </header>
+
+    <section class="contact-container">
+
+        <!-- PANNEAU GAUCHE : INFOS -->
+        <div class="contact-info">
+            <h2>Nos Coordonnées</h2>
+            <p>N'hésitez pas à nous contacter pour une démonstration de Carto⁵ ou pour discuter de vos besoins en géomatique.</p>
+
+            <div class="info-item">
+                <span class="icon">📧</span>
+                <div>
+                    <strong>Courriel</strong>
+                    <!-- Pense à changer l'adresse courriel ici -->
+                    <a href="mailto:gilles@gisyweb.com">info@gisyweb.com</a>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <span class="icon">📞</span>
+                <div>
+                    <strong>Téléphone</strong>
+                    <!-- Pense à changer le numéro ici -->
+                    <a href="tel:+14180000000">(418) 555-0000</a>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <span class="icon">📍</span>
+                <div>
+                    <strong>Région</strong>
+                    <span>Québec, QC, Canada</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANNEAU DROIT : FORMULAIRE -->
+        <div class="contact-form-wrapper">
+            <h2>Envoyez un message</h2>
+            <form class="gw-form">
+                <div class="form-group">
+                    <label for="name">Nom complet</label>
+                    <input type="text" id="name" placeholder="Votre nom" />
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Adresse courriel</label>
+                    <input type="email" id="email" placeholder="votre@courriel.com" />
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Sujet</label>
+                    <select id="subject">
+                        <option>Démonstration Carto⁵</option>
+                        <option>Développement sur mesure</option>
+                        <option>Acquisition par Drones</option>
+                        <option>Autre question</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="msg">Message</label>
+                    <textarea id="msg" rows="5" placeholder="Comment pouvons-nous vous aider ?"></textarea>
+                </div>
+
+                <button type="button" class="btn-hero-primary">Envoyer le message</button>
+            </form>
+        </div>
+    </section>
+
+</div>

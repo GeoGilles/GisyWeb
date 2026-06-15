@@ -1,0 +1,26 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <rect width="400" height="400" fill="#0f172a" rx="40"/>
+  <g stroke="#38bdf8" fill="none" opacity="0.5">
+    <circle cx="200" cy="200" r="110" stroke-width="3"/>
+    <ellipse cx="200" cy="200" rx="45" ry="110" stroke-width="2"/>
+    <ellipse cx="200" cy="200" rx="110" ry="45" stroke-width="2"/>
+  </g>
+  <g stroke="#a78bfa" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 195 100 C 150 70, 110 120, 140 160 C 120 180, 150 200, 185 190 Z" />
+    <path d="M 205 100 C 250 70, 290 120, 260 160 C 280 180, 250 200, 215 190 Z" />
+  </g>
+  <path d="M 215 120 L 180 200 L 210 200 L 185 280" fill="none" stroke="#facc15" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+  <g fill="#fb923c">
+    <circle cx="120" cy="230" r="7"/>
+    <circle cx="280" cy="230" r="7"/>
+    <circle cx="230" cy="280" r="7"/>
+  </g>
+  <path d="M 120 230 Q 200 280 280 230" fill="none" stroke="#fb923c" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>
+  <path d="M 185 280 L 230 280" fill="none" stroke="#fb923c" stroke-width="3" stroke-dasharray="4 4" stroke-linecap="round"/>
+  <text x="200" y="345" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" fill="#f8fafc" text-anchor="middle" letter-spacing="4">
+    CARTO<tspan fill="#facc15">⁵</tspan>
+  </text>
+  <text x="200" y="370" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" letter-spacing="3">
+    GÉOMATIQUE INTÉGRÉE
+  </text>
+</svg>

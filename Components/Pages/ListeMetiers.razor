@@ -1,0 +1,142 @@
+﻿@page "/liste-metiers"
+@rendermode InteractiveServer
+
+<PageTitle>Répertoire des Métiers - GisYweb</PageTitle>
+
+<div class="repertoire-page">
+
+    <!-- HERO & BARRE DE RECHERCHE -->
+    <header class="repertoire-hero">
+        <h1>Répertoire des <span>Métiers</span></h1>
+        <p>Découvrez comment la géomatique transforme plus de 80 professions à travers le monde.</p>
+
+        <!-- BARRE DE RECHERCHE BLAZOR -->
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text"
+                   placeholder="Rechercher un métier (ex: Urbaniste, Forêt, Eau...)"
+                   @bind="TermeRecherche"
+                   @bind:event="oninput" />
+        </div>
+    </header>
+
+    <!-- GRILLE DES RÉSULTATS -->
+    <section class="metiers-container">
+
+        <div class="result-count">
+            @MetiersFiltres.Count() métier(s) trouvé(s)
+        </div>
+
+        <div class="metiers-grid">
+            @foreach (var metier in MetiersFiltres)
+            {
+                <div class="metier-card">
+                    <div class="metier-header">
+                        <span class="metier-code">@metier.Code</span>
+                        <h3>@metier.Titre</h3>
+                    </div>
+                    <div class="metier-body">
+                        <div class="metier-section">
+                            <h4>Description du métier</h4>
+                            <p>@metier.Description</p>
+                        </div>
+                        <div class="metier-section highlight">
+                            <h4>🌐 Utilisation de la géomatique</h4>
+                            <p>@metier.Utilisation</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!MetiersFiltres.Any())
+        {
+            <div class="no-results">
+                <h3>Aucun métier trouvé pour "@TermeRecherche"</h3>
+                <p>Essayez un autre mot-clé.</p>
+            </div>
+        }
+
+    </section>
+</div>
+
+@code {
+    // Le terme tapé par l'utilisateur
+    private string TermeRecherche { get; set; } = string.Empty;
+
+    // La magie Blazor : filtre la liste instantanément !
+    private IEnumerable<Metier> MetiersFiltres =>
+        string.IsNullOrWhiteSpace(TermeRecherche)
+        ? ListeComplete
+        : ListeComplete.Where(m =>
+            m.Titre.Contains(TermeRecherche, StringComparison.OrdinalIgnoreCase) ||
+            m.Description.Contains(TermeRecherche, StringComparison.OrdinalIgnoreCase) ||
+            m.Utilisation.Contains(TermeRecherche, StringComparison.OrdinalIgnoreCase));
+
+    // Définition de ce qu'est un "Métier"
+    public class Metier
+    {
+        public string Code { get; set; }
+        public string Titre { get; set; }
+        public string Description { get; set; }
+        public string Utilisation { get; set; }
+    }
+
+    // TA BASE DE DONNÉES (J'ai formaté les premiers, tu peux ajouter les autres sur le même modèle !)
+    // TA BASE DE DONNÉES COMPLÈTE (80+ Métiers)
+    private List<Metier> ListeComplete = new List<Metier>
+    {
+        new Metier { Code = "100000", Titre = "Géologue Minier", Description = "Étude des roches et minéraux pour l'exploration minière. Analyse la composition et la structure pour identifier des sites d'extraction.", Utilisation = "Crucial pour la cartographie détaillée des formations géologiques. Les SIG et la télédétection permettent une analyse précise." },
+        new Metier { Code = "101000", Titre = "Ingénieur Forestier", Description = "Gère et protège les forêts. Planifie les activités comme la récolte, la reforestation et la protection contre les incendies.", Utilisation = "Aide à planifier les récoltes, surveiller la santé des forêts et évaluer l'impact environnemental." },
+        new Metier { Code = "102000", Titre = "Expert en Gestion des Incendies", Description = "Se concentre sur la prévention, le contrôle et la gestion des incendies, en particulier dans les zones forestières ou urbaines.", Utilisation = "Analyse les risques grâce à la cartographie des zones, la modélisation des comportements du feu et la planification des interventions." },
+        new Metier { Code = "103000", Titre = "Urbaniste", Description = "Conçoit et planifie l'aménagement des espaces urbains et ruraux (aspects sociaux, économiques et environnementaux).", Utilisation = "Essentielle pour visualiser les tendances démographiques, les réseaux de transport et l'utilisation des sols." },
+        new Metier { Code = "104000", Titre = "Analyste en Criminalité", Description = "Étudie les tendances et lieux des activités criminelles pour aider à la prévention et l'intervention policière.", Utilisation = "Cartographie les incidents, identifie les points chauds et analyse les schémas géographiques des activités illégales." },
+        new Metier { Code = "105000", Titre = "Officier de Police", Description = "Assure la sécurité publique, enquête sur les crimes et maintient l'ordre.", Utilisation = "Aide dans les enquêtes, la surveillance et la répartition des ressources en fournissant des informations spatiales clés." },
+        new Metier { Code = "106000", Titre = "Écologue", Description = "Étudie les interactions entre les organismes vivants et leur environnement pour comprendre la biodiversité.", Utilisation = "Cartographie les habitats, suit les changements environnementaux et analyse les impacts humains sur les écosystèmes." },
+        new Metier { Code = "107000", Titre = "Gestionnaire de Ressources Hydriques", Description = "Gère et protège les ressources en eau, en veillant à leur utilisation durable.", Utilisation = "Surveille les bassins hydrographiques, planifie l'utilisation des ressources et évalue les risques liés à l'eau." },
+        new Metier { Code = "108000", Titre = "Spécialiste en Santé Publique", Description = "Travaille à prévenir les maladies, promouvoir la santé et prolonger la vie au sein de la population.", Utilisation = "Analyse la distribution géographique des maladies, les tendances de santé et les besoins en ressources." },
+        new Metier { Code = "109000", Titre = "Agronome", Description = "Se spécialise dans l'agriculture, l'optimisation de la production de cultures et l'élevage.", Utilisation = "Appliquée dans l'agriculture de précision pour optimiser les cultures et surveiller les conditions des sols." },
+        new Metier { Code = "110000", Titre = "Spécialiste en Télédétection", Description = "Analyse les images satellites et aériennes pour observer et interpréter divers phénomènes.", Utilisation = "Traite et analyse les images pour suivre les changements environnementaux et la couverture végétale." },
+        new Metier { Code = "12000", Titre = "Consultant en Géomatique", Description = "Offre des conseils et des solutions spécialisées dans l'utilisation des SIG et la cartographie pour divers secteurs.", Utilisation = "Mise en place de systèmes SIG, formation des utilisateurs et fourniture de solutions cartographiques." },
+        new Metier { Code = "13000", Titre = "Technicien SIG", Description = "Gère, traite et analyse des données géospatiales pour l'urbanisme, l'environnement, etc.", Utilisation = "Crée des cartes, gère des bases de données spatiales et effectue des analyses pour différents projets." },
+        new Metier { Code = "14000", Titre = "Développeur de SIG", Description = "Conçoit et développe des applications et des outils logiciels pour les systèmes d'information géographique.", Utilisation = "Intègre la géomatique en créant des solutions personnalisées pour l'analyse spatiale et la visualisation." },
+        new Metier { Code = "15000", Titre = "Chercheur en Géographie", Description = "Étudie les caractéristiques de la Terre, se concentrant sur les phénomènes géographiques et environnementaux.", Utilisation = "Soutient les recherches par l'analyse spatiale avancée et l'interprétation de données géospatiales complexes." },
+        new Metier { Code = "16000", Titre = "Spécialiste en Logistique", Description = "Se concentre sur l'optimisation des chaînes d'approvisionnement et des processus logistiques.", Utilisation = "Analyse et optimise les itinéraires de transport, gère les stocks et planifie les opérations efficacement." },
+        new Metier { Code = "17000", Titre = "Planificateur de Transport", Description = "Conçoit et planifie les infrastructures de transport pour améliorer la mobilité et la sécurité.", Utilisation = "Analyse les flux de trafic, planifie les réseaux et évalue l'impact environnemental des projets." },
+        new Metier { Code = "18000", Titre = "Archéologue", Description = "Étudie les artefacts et les sites historiques pour comprendre les civilisations passées.", Utilisation = "Localise et analyse les sites, planifie les fouilles et cartographie les découvertes avec précision." },
+        new Metier { Code = "19000", Titre = "Gestionnaire de Catastrophes Naturelles", Description = "Coordonne les réponses aux catastrophes (inondations, tremblements de terre, ouragans).", Utilisation = "Cartographie les zones à risque, planifie les interventions d'urgence et analyse les impacts." },
+        new Metier { Code = "20000", Titre = "Analyste de Marché Immobilier", Description = "Étudie les tendances du marché, les valeurs immobilières et les facteurs d'influence.", Utilisation = "Analyse les tendances, la localisation des propriétés et cartographie les données pour l'investissement." },
+        new Metier { Code = "21000", Titre = "Spécialiste en Marketing Géolocalisé", Description = "Utilise la géolocalisation pour cibler les campagnes marketing et comprendre le comportement client.", Utilisation = "Segmente le marché en fonction de la localisation pour un ciblage publicitaire précis." },
+        new Metier { Code = "22000", Titre = "Scientifique d'Agences Spatiales (NASA)", Description = "Se concentre sur l'exploration spatiale et l'étude de phénomènes interplanétaires.", Utilisation = "Analyse des données spatiales, cartographie des corps célestes et interprète des missions spatiales." },
+        new Metier { Code = "23000", Titre = "Spécialiste en Risques Assurantiels", Description = "Évalue les risques géographiques pour les assurances (risques naturels, catastrophes).", Utilisation = "Analyse les zones à risque, cartographie les sinistres et évalue l'exposition." },
+        new Metier { Code = "24000", Titre = "Expert en Énergies Renouvelables", Description = "Évalue et localise les sites pour les projets d'énergie (éolien, solaire).", Utilisation = "Identifie les sites optimaux, analyse les conditions environnementales et planifie l'infrastructure." },
+        new Metier { Code = "25000", Titre = "Hydrologue", Description = "Étudie les eaux souterraines et de surface (distribution, circulation, propriétés).", Utilisation = "Cartographie les bassins hydrographiques, surveille les niveaux et analyse l'impact humain." },
+        new Metier { Code = "26000", Titre = "Spécialiste en Défense et Sécurité Nationale", Description = "S'occupe de la surveillance stratégique et de la planification de la défense.", Utilisation = "Surveillance territoriale, planification des opérations militaires et gestion des crises." },
+        new Metier { Code = "27000", Titre = "Expert en Climatologie", Description = "Étudie le climat et les changements climatiques, prédisant les impacts futurs.", Utilisation = "Modélise les phénomènes climatiques et cartographie les impacts des changements." },
+        new Metier { Code = "28000", Titre = "Géomaticien en Développement Durable", Description = "Applique les SIG dans la planification entre l'environnement, l'économie et le social.", Utilisation = "Analyse l'utilisation des ressources et évalue l'impact environnemental des projets." },
+        new Metier { Code = "29000", Titre = "Gestionnaire de Parcs et Espaces Protégés", Description = "Gère les aires protégées en veillant à leur conservation et utilisation durable.", Utilisation = "Cartographie des écosystèmes et surveillance continue des zones protégées." },
+        new Metier { Code = "30000", Titre = "Analyste en Mobilité Urbaine", Description = "Planifie les systèmes de transport dans les zones urbaines denses.", Utilisation = "Analyse les réseaux, planifie les infrastructures et évalue les politiques de mobilité." },
+        new Metier { Code = "31000", Titre = "Spécialiste en Cartographie Historique", Description = "Analyse et représente des données historiques (environnements, événements passés).", Utilisation = "Cartographie l'évolution des paysages, des frontières et des zones urbaines à travers l'histoire." },
+        new Metier { Code = "32000", Titre = "Consultant ONG", Description = "Applique les SIG dans des projets humanitaires et environnementaux.", Utilisation = "Cartographie les zones de crise, analyse les besoins et planifie les interventions." },
+        new Metier { Code = "33000", Titre = "Spécialiste en Surveillance Environnementale", Description = "Surveille les impacts environnementaux (pollution, déforestation).", Utilisation = "Suit les changements environnementaux, cartographie les zones affectées et analyse les tendances." },
+        new Metier { Code = "34000", Titre = "Gestionnaire d'Infrastructures Urbaines", Description = "Maintient les infrastructures urbaines (routes, eau, électricité).", Utilisation = "Gère les actifs urbains, planifie la maintenance et analyse l'impact des projets d'urbanisation." },
+        new Metier { Code = "35000", Titre = "Expert en Logistique Militaire", Description = "Planification logistique dans le domaine militaire (transport, ressources).", Utilisation = "Cartographie stratégique, gestion des opérations et planification des missions." },
+        new Metier { Code = "36000", Titre = "Architecte Paysagiste", Description = "Conçoit et planifie des espaces extérieurs (naturels et construits).", Utilisation = "Visualise et planifie des projets d'aménagement en analysant les caractéristiques du terrain." },
+        new Metier { Code = "38000", Titre = "Cartographe pour les Médias", Description = "Visualise des données pour des reportages, illustre et contextualise des histoires.", Utilisation = "Crée des cartes qui aident à expliquer des événements et des tendances complexes." },
+        new Metier { Code = "39000", Titre = "Spécialiste Faune et Flore", Description = "Suit et conserve les espèces animales et végétales, surtout celles menacées.", Utilisation = "Cartographie les habitats, surveille les populations et planifie des actions de conservation." },
+        new Metier { Code = "40000", Titre = "Gestionnaire du Littoral", Description = "Planification et gestion des zones côtières (environnement et développement).", Utilisation = "Cartographie les zones côtières et analyse les impacts des activités humaines." },
+        new Metier { Code = "42000", Titre = "Expert en Suivi des Glaciers", Description = "Étudie les changements des glaciers, importants indicateurs climatiques.", Utilisation = "Analyse les données de télédétection, surveille les fontes et prévoit les impacts." },
+        new Metier { Code = "45000", Titre = "Ingénieur en Transport Intelligent", Description = "Développe des solutions de transport avancées (navigation, gestion du trafic).", Utilisation = "Développe des systèmes de navigation précis et gère le trafic en temps réel." },
+        new Metier { Code = "46000", Titre = "Expert en Topographie Foncière", Description = "Mesure, cartographie et gestion des propriétés foncières (arpentage).", Utilisation = "Mesure précise des terrains, délimitation des propriétés et gestion cadastrale." },
+        new Metier { Code = "51000", Titre = "Administrateur de BDD Géospatiales", Description = "Gère et optimise des bases de données contenant des informations spatiales.", Utilisation = "Gère efficacement les données, assurant leur intégrité, sécurité et accessibilité." },
+        new Metier { Code = "52000", Titre = "Développeur Web en Géomatique", Description = "Crée des services web intégrant des données géospatiales.", Utilisation = "Incorpore des données spatiales dans des applications web pour l'interaction utilisateur." },
+        new Metier { Code = "54000", Titre = "Analyste pour la Finance et Comptabilité", Description = "Analyse spatiale des données financières offrant des perspectives sur les marchés.", Utilisation = "Visualise les données financières en fonction de la localisation pour les investissements." },
+        new Metier { Code = "61000", Titre = "Spécialiste en Gestion des Déchets", Description = "Planification et optimisation de la collecte et du traitement des déchets.", Utilisation = "Cartographie les itinéraires de collecte et gère les sites de traitement." },
+        new Metier { Code = "62000", Titre = "Expert en Qualité de l'Air", Description = "Surveille et analyse la qualité de l'air pour la santé publique.", Utilisation = "Cartographie les zones de pollution et planifie des interventions d'amélioration." },
+        new Metier { Code = "92000", Titre = "Analyste SIG pour l'Aéronautique", Description = "Planification et gestion de l'espace aérien, routes aériennes et sécurité.", Utilisation = "Cartographie l'espace aérien, analyse les itinéraires de vol et le trafic." },
+        new Metier { Code = "114000", Titre = "Spécialiste du Trafic Urbain", Description = "Évalue et optimise les flux de trafic en milieu urbain dense.", Utilisation = "Analyse les modèles de trafic, planifie les infrastructures et les feux de circulation." },
+        new Metier { Code = "122000", Titre = "Expert en Géopolitique", Description = "Analyse les enjeux géopolitiques à travers des cartes et des données spatiales.", Utilisation = "Visualise les relations internationales, les frontières et les zones de conflit." },
+        new Metier { Code = "132000", Titre = "Spécialiste en Catastrophes Industrielles", Description = "Analyse les risques et gère les interventions en cas de fuites ou accidents industriels.", Utilisation = "Cartographie les zones à risque chimique/industriel et planifie les évacuations." },
+        new Metier { Code = "133000", Titre = "Chercheur en Sciences Sociales", Description = "Applique les outils géomatiques pour étudier les dynamiques sociales et culturelles.", Utilisation = "Analyse les tendances démographiques, les inégalités et l'accès aux services publics." }
+    };
+}

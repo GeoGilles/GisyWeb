@@ -1,0 +1,307 @@
+@page "/Admin/profiles"
+@layout AdminLayout
+@using GisyWeb.Infrastructure.AdminDb.Entities
+@using GisyWeb.Services
+@inject AdminUserService Svc
+
+<div class="container-fluid py-4" style="background-color:#f4f6f8; min-height:100vh;">
+
+    <!-- Titre de la page façon Dashboard -->
+    <div class="mb-4">
+        <h4 class="mb-0 fw-bold" style="color: #1a222c;"><i class="bi bi-sliders2 me-2 text-warning"></i>PROFILS TECHNIQUES</h4>
+        <div class="text-muted small mt-1">Configuration des moteurs spatiaux et des bases de données de l'application.</div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white py-3 d-flex justify-content-between align-items-center" style="background-color: #1a222c;">
+            <div class="fw-bold">Liste des Profils</div>
+            <button class="btn btn-sm fw-bold" style="background-color: #e6b422; color: #1a222c;" @onclick="NewProfil">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau
+            </button>
+        </div>
+
+        <div class="card-body bg-white p-4">
+            @if (_loading)
+            {
+                <div class="text-center text-muted py-5">
+                    <div class="spinner-border text-warning mb-3" role="status"></div>
+                    <div>Chargement des profils...</div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <!-- COLONNE GAUCHE (Liste) -->
+                    <div class="col-12 col-xxl-7">
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input class="form-control border-start-0" placeholder="Filtrer (client, code, label)..." @bind="_filter" @bind:event="oninput" />
+                            <button class="btn btn-outline-secondary" @onclick="() => _filter = string.Empty">Effacer</button>
+                        </div>
+
+                        <div class="table-responsive border rounded" style="max-height: 65vh; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="sticky-top" style="background-color: #f9fafb;">
+                                    <tr>
+                                        <th class="text-muted small">CLIENT</th>
+                                        <th class="text-muted small">CODE</th>
+                                        <th class="text-muted small">LABEL</th>
+                                        <th class="text-muted small">MOTEUR</th>
+                                        <th class="text-muted small">GEOM</th>
+                                        <th class="text-center text-muted small">ACTIF</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Filtered())
+                                    {
+                                        <tr class="@(_edit?.ProfileId == p.ProfileId ? "table-active" : "")">
+                                            <td class="fw-bold" style="color: #2d7a48;">@p.ClientCode</td>
+                                            <td class="font-monospace small fw-bold text-dark">@p.Code</td>
+                                            <td class="text-dark">@p.Label</td>
+                                            <td><span class="badge border text-dark" style="background-color: #fafaf7;">@p.EngineKind</span></td>
+                                            <td><span class="badge border text-dark" style="background-color: #fafaf7;">@p.GeometryKind</span></td>
+                                            <td class="text-center">
+                                                @if (p.IsActive == 1)
+                                                {
+                                                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-circle text-muted opacity-25 fs-5"></i>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-secondary py-1" @onclick="() => Edit(p)" title="Modifier">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE (Formulaire) -->
+                    <div class="col-12 col-xxl-5">
+                        <div class="card border border-warning shadow-sm sticky-top" style="top: 1.5rem; background-color: #fafaf7;">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: #1a222c;">Fiche Profil</h5>
+
+                                @if (_edit == null)
+                                {
+                                    <div class="text-muted text-center py-5">
+                                        <i class="bi bi-cursor fs-1 opacity-25 d-block mb-3"></i>
+                                        Sélectionnez un profil à gauche pour le modifier.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <EditForm Model="@_edit" OnValidSubmit="Save">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small fw-bold text-muted mb-1">CLIENT_CODE</label>
+                                                <input class="form-control" @bind="_edit.ClientCode" />
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small fw-bold text-muted mb-1">CODE</label>
+                                                <input class="form-control font-monospace fw-bold" @bind="_edit.Code" required />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">LABEL</label>
+                                                <input class="form-control fw-bold" @bind="_edit.Label" required />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">DESCRIPTION</label>
+                                                <textarea class="form-control" rows="2" @bind="_edit.Description"></textarea>
+                                            </div>
+
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold text-muted mb-1">MOTEUR</label>
+                                                <select class="form-select" @bind="_edit.EngineKind">
+                                                    <option value="SpatiaLite">SpatiaLite</option>
+                                                    <option value="Sqlite">Sqlite</option>
+                                                    <option value="Esri">Esri</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold text-muted mb-1">GÉOMÉTRIE</label>
+                                                <select class="form-select" @bind="_edit.GeometryKind">
+                                                    <option value="Point">Point</option>
+                                                    <option value="Polyline">Polyline</option>
+                                                    <option value="Polygon">Polygon</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">DB_NAME</label>
+                                                <input class="form-control" @bind="_edit.DbName" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">SQLITE PATH</label>
+                                                <input class="form-control" @bind="_edit.SqliteDataPath" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold text-muted mb-1">JSON CONFIG</label>
+                                                <textarea class="form-control font-monospace" rows="3" @bind="_edit.JsonConfig"></textarea>
+                                            </div>
+
+                                            <div class="col-12 mt-3">
+                                                <div class="form-check form-switch">
+                                                    <!-- CONVERSION MANUELLE BOOL UI <-> LONG DB -->
+                                                    <input class="form-check-input" type="checkbox" role="switch"
+                                                           checked="@(_edit.IsActive == 1)"
+                                                           @onchange="@(e => _edit.IsActive = (bool)e.Value ? 1 : 0)" />
+                                                    <label class="form-check-label small fw-bold text-dark">Actif</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 mt-4 pt-3 border-top d-flex gap-2">
+                                                <button type="submit" class="btn text-white flex-grow-1 fw-bold" style="background-color: #2d7a48;" disabled="@_saving">
+                                                    @if (_saving)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                                    }
+                                                    <i class="bi bi-save2 me-1"></i>ENREGISTRER
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary fw-bold" @onclick="Cancel" disabled="@_saving">Annuler</button>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(_msg))
+                                            {
+                                                <div class="col-12 mt-3 alert alert-info border-0 shadow-sm py-2 px-3 small fw-bold mb-0">
+                                                    <i class="bi bi-info-circle me-2"></i>@_msg
+                                                </div>
+                                            }
+                                        </div>
+                                    </EditForm>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // LE C# EST INTACT
+    private bool _loading = true;
+    private bool _saving = false;
+    private string _filter = "";
+    private string _msg = "";
+
+    private List<CartoProfil> _items = new();
+    private CartoProfil? _edit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _items = await Svc.GetProfilsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur Profils: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private IEnumerable<CartoProfil> Filtered()
+    {
+        if (string.IsNullOrWhiteSpace(_filter)) return _items;
+
+        var f = _filter.Trim().ToLowerInvariant();
+        return _items.Where(p =>
+            (p.ClientCode ?? "").ToLowerInvariant().Contains(f) ||
+            (p.Code ?? "").ToLowerInvariant().Contains(f) ||
+            (p.Label ?? "").ToLowerInvariant().Contains(f)
+        );
+    }
+
+    private void Edit(CartoProfil p)
+    {
+        _edit = new CartoProfil
+        {
+            ProfileId = p.ProfileId,
+            Code = p.Code,
+            Label = p.Label,
+            Description = p.Description,
+            ClientCode = p.ClientCode,
+            EngineKind = p.EngineKind,
+            GeometryKind = p.GeometryKind,
+            DbName = p.DbName,
+            DirPath = p.DirPath,
+            SqliteDataPath = p.SqliteDataPath,
+            IsActive = p.IsActive,
+            WriterKind = p.WriterKind,
+            JsonConfig = p.JsonConfig,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt
+        };
+        _msg = "";
+    }
+
+    private void NewProfil()
+    {
+        _edit = new CartoProfil
+        {
+            ClientCode = "SYSTEM",
+            Code = "",
+            Label = "",
+            EngineKind = "SpatiaLite",
+            GeometryKind = "Point",
+            IsActive = 0,
+            WriterKind = "Sqlite",
+            CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+        _msg = "";
+    }
+
+    private void Cancel()
+    {
+        _edit = null;
+        _msg = "";
+    }
+
+    private async Task Save()
+    {
+        if (_edit == null) return;
+
+        if (string.IsNullOrWhiteSpace(_edit.Code) || string.IsNullOrWhiteSpace(_edit.Label))
+        {
+            _msg = "CODE et LABEL sont requis.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            _edit.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            await Svc.UpsertProfilAsync(_edit);
+            _items = await Svc.GetProfilsAsync();
+
+            _msg = "Enregistré.";
+        }
+        catch (Exception ex)
+        {
+            _msg = "Erreur : " + ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

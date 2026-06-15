@@ -1,0 +1,173 @@
+@page "/Admin/projects"
+@layout AdminLayout
+@using GisyWeb.Infrastructure.AdminDb.Entities
+@using GisyWeb.Services
+@inject AdminUserService Svc
+
+<div class="container-fluid py-4" style="background-color:#f4f6f8; min-height:100vh;">
+
+    <!-- Titre de la page façon Dashboard -->
+    <div class="mb-4">
+        <h4 class="mb-0 fw-bold" style="color: #1a222c;"><i class="bi bi-folder2-open me-2 text-warning"></i>CATALOGUE DES PROJETS</h4>
+        <div class="text-muted small mt-1">Consultation et historique des projets créés dans Carto⁵.</div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white py-3" style="background-color: #1a222c;">
+            <div class="fw-bold">Liste des Projets</div>
+        </div>
+
+        <div class="card-body bg-white p-4">
+            @if (_loading)
+            {
+                <div class="text-center text-muted py-5">
+                    <div class="spinner-border text-warning mb-3" role="status"></div>
+                    <div>Chargement des projets...</div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <!-- COLONNE GAUCHE (Liste) -->
+                    <div class="col-12 col-xxl-8">
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input class="form-control border-start-0" placeholder="Filtrer par nom, description ou créateur..." @bind="_filter" @bind:event="oninput" />
+                            <button class="btn btn-outline-secondary" @onclick="() => _filter = string.Empty">Effacer</button>
+                        </div>
+
+                        <div class="table-responsive border rounded" style="max-height: 65vh; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="sticky-top" style="background-color: #f9fafb;">
+                                    <tr>
+                                        <th class="text-muted small">ID PROJET</th>
+                                        <th class="text-muted small">NOM DU PROJET</th>
+                                        <th class="text-muted small">CRÉATEUR</th>
+                                        <th class="text-muted small">DATE CRÉATION</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Filtered())
+                                    {
+                                        <tr class="@(_selected?.Objectid == p.Objectid ? "table-active" : "")" style="cursor: pointer;" @onclick="() => Select(p)">
+                                            <td><span class="badge border text-dark font-monospace" style="background-color: #fafaf7;">@p.IdeProjt</span></td>
+                                            <td class="fw-bold" style="color: #2d7a48;">@p.NomProjt</td>
+                                            <td class="small text-muted fw-bold">@p.NumUtilsCretn</td>
+                                            <td class="small text-muted">@p.DahCretn</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-info py-1" @onclick:stopPropagation="true" @onclick="() => Select(p)" title="Voir les détails">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE (Détails) -->
+                    <div class="col-12 col-xxl-4">
+                        <div class="card border border-info shadow-sm sticky-top" style="top: 1.5rem; background-color: #f0f8ff;">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-4 border-bottom border-info pb-2" style="color: #1a222c;">
+                                    <i class="bi bi-info-circle me-2 text-info"></i>Détails du Projet
+                                </h5>
+
+                                @if (_selected == null)
+                                {
+                                    <div class="text-muted text-center py-5">
+                                        <i class="bi bi-eye fs-1 opacity-25 d-block mb-3"></i>
+                                        Cliquez sur un projet dans la liste pour voir ses détails.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <dl class="row small mb-0">
+                                        <dt class="col-sm-4 text-muted mb-2">Identifiant</dt>
+                                        <dd class="col-sm-8 fw-bold text-dark mb-2 fs-6">@_selected.IdeProjt</dd>
+
+                                        <dt class="col-sm-4 text-muted mb-2">Nom du projet</dt>
+                                        <dd class="col-sm-8 fw-bold" style="color: #2d7a48;">@_selected.NomProjt</dd>
+
+                                        <dt class="col-sm-4 text-muted mb-3">Description</dt>
+                                        <dd class="col-sm-8 mb-3">@(_selected.DesProjt ?? "Aucune description")</dd>
+
+                                        <dt class="col-sm-4 text-muted mb-2">Propriétaire</dt>
+                                        <dd class="col-sm-8 mb-2"><span class="badge bg-white border text-dark">@(_selected.NomUniteAdmnsPropr ?? "Non défini")</span></dd>
+
+                                        <hr class="my-3 opacity-25" />
+
+                                        <dt class="col-sm-4 text-muted mb-2">Créé par</dt>
+                                        <dd class="col-sm-8 fw-bold text-dark mb-2">@_selected.NumUtilsCretn</dd>
+
+                                        <dt class="col-sm-4 text-muted mb-3">Date</dt>
+                                        <dd class="col-sm-8 mb-3">@_selected.DahCretn</dd>
+
+                                        <!-- Affichage coordonées si dispos -->
+                                        @if (_selected.GeoCoordX.HasValue && _selected.GeoCoordY.HasValue)
+                                        {
+                                            <dt class="col-sm-4 text-muted mb-2">Coordonnées</dt>
+                                            <dd class="col-sm-8 font-monospace text-primary mb-2">
+                                                <i class="bi bi-geo-alt-fill me-1"></i>X: @_selected.GeoCoordX<br />
+                                                <i class="bi bi-geo-alt-fill me-1" style="visibility: hidden;"></i>Y: @_selected.GeoCoordY
+                                            </dd>
+                                        }
+
+                                        <hr class="my-3 opacity-25" />
+
+                                        <dt class="col-sm-4 text-muted mb-2">Réf. Interne</dt>
+                                        <dd class="col-sm-8 font-monospace text-muted mb-2">@_selected.Objectid</dd>
+
+                                        <dt class="col-sm-4 text-muted">GlobalID</dt>
+                                        <dd class="col-sm-8 text-break font-monospace" style="font-size: 0.75rem;">@_selected.GlobalID</dd>
+                                    </dl>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // LE C# RESTE INTACT
+    private bool _loading = true;
+    private string _filter = "";
+    private List<CartoProjtPoint> _items = new();
+    private CartoProjtPoint? _selected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _items = await Svc.GetAllProjectsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur chargement projets: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private IEnumerable<CartoProjtPoint> Filtered()
+    {
+        if (string.IsNullOrWhiteSpace(_filter)) return _items;
+
+        var f = _filter.Trim().ToLowerInvariant();
+        return _items.Where(p =>
+            (p.NomProjt ?? "").ToLowerInvariant().Contains(f) ||
+            (p.DesProjt ?? "").ToLowerInvariant().Contains(f) ||
+            (p.NumUtilsCretn ?? "").ToLowerInvariant().Contains(f)
+        );
+    }
+
+    private void Select(CartoProjtPoint p) => _selected = p;
+}
