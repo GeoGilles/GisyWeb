@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GisyWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8f441d22c2bd897b983b7d549e462c33d32155df")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5cc30327dfadbefb93a8a5f749d6912c65fcd7a0")]
 [assembly: System.Reflection.AssemblyProductAttribute("GisyWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GisyWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
